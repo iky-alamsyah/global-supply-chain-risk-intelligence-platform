@@ -25,6 +25,7 @@ use HasFactory, Notifiable;
         'password',
         'role',
         'status',
+        'photo',
     ];
 
     /**

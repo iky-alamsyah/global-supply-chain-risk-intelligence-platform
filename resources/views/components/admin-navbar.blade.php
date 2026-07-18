@@ -30,9 +30,16 @@
         {{-- User Dropdown --}}
         <div class="dropdown">
             <div class="navbar-user" data-bs-toggle="dropdown" aria-expanded="false" id="adminUserDropdown" style="cursor: pointer;">
-                <div class="navbar-avatar" style="background: var(--danger); color: white;">
-                    {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
-                </div>
+                @if(auth()->user()->photo)
+                    <img src="{{ asset('storage/' . auth()->user()->photo) }}" 
+                         alt="{{ auth()->user()->name }}" 
+                         class="rounded-circle border"
+                         style="width: 32px; height: 32px; object-fit: cover; margin-right: 8px;">
+                @else
+                    <div class="navbar-avatar" style="background: var(--danger); color: white;">
+                        {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
+                    </div>
+                @endif
                 <div class="d-none d-sm-block">
                     <div class="navbar-user-name">{{ auth()->user()->name ?? 'Admin' }}</div>
                     <span class="navbar-user-role">Administrator</span>

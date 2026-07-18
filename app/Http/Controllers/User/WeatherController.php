@@ -56,11 +56,11 @@ class WeatherController extends Controller
         $countries = Country::where('is_active', true)->get();
 
         foreach ($countries as $country) {
-            \App\Jobs\RefreshWeatherJob::dispatch($country, true);
+            \App\Jobs\RefreshWeatherJob::dispatchSync($country, true);
         }
 
-        Log::info("Manual batch weather refresh queue started for " . $countries->count() . " countries.");
+        Log::info("Manual batch weather refresh completed synchronously for " . $countries->count() . " countries.");
 
-        return redirect()->back()->with('success', 'Weather updates have been queued and are running in the background. Check back in a few moments for the latest data.');
+        return redirect()->back()->with('success', 'All weather data has been successfully refreshed from Open-Meteo.');
     }
 }

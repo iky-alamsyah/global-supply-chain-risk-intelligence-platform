@@ -83,7 +83,7 @@ class CountryController extends Controller
                 Log::warning('Manual Risk Score recalculation failed', ['country' => $country->name, 'error' => $e->getMessage()]);
             }
 
-            return redirect()->route('countries.show', $country)
+            return redirect()->back()
                 ->with('success', 'Country data has been refreshed successfully.');
         } catch (\Throwable $e) {
             Log::error('Country data refresh failed completely', [
@@ -91,7 +91,7 @@ class CountryController extends Controller
                 'error' => $e->getMessage()
             ]);
 
-            return redirect()->route('countries.show', $country)
+            return redirect()->back()
                 ->with('error', 'Failed to refresh country data: ' . $e->getMessage());
         }
     }

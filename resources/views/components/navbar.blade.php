@@ -46,10 +46,17 @@
 
         {{-- User Dropdown --}}
         <div class="dropdown">
-            <div class="navbar-user" data-bs-toggle="dropdown" aria-expanded="false" id="userDropdown">
-                <div class="navbar-avatar">
-                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
-                </div>
+            <div class="navbar-user" data-bs-toggle="dropdown" aria-expanded="false" id="userDropdown" style="cursor: pointer;">
+                @if(auth()->user()->photo)
+                    <img src="{{ asset('storage/' . auth()->user()->photo) }}" 
+                         alt="{{ auth()->user()->name }}" 
+                         class="rounded-circle border"
+                         style="width: 32px; height: 32px; object-fit: cover; margin-right: 8px;">
+                @else
+                    <div class="navbar-avatar">
+                        {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                    </div>
+                @endif
                 <div class="d-none d-sm-block">
                     <div class="navbar-user-name">{{ auth()->user()->name ?? 'User' }}</div>
                     <span class="navbar-user-role">Analyst</span>
@@ -70,7 +77,7 @@
                 </li>
 
                 <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="#"
+                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('profile.edit') }}"
                        style="color:var(--text-secondary);">
                         <i class="bi bi-person-circle" style="color:var(--text-muted);width:16px;"></i>
                         My Profile

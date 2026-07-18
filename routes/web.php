@@ -57,6 +57,9 @@ Route::get('/ports/{port}', [PortController::class, 'show'])
 Route::get('/news/{news}', [NewsController::class, 'show'])
     ->name('news.show');
 
+Route::get('/articles/{slug}', [\App\Http\Controllers\Admin\AdminArticleController::class, 'publicShow'])
+    ->name('articles.public.show');
+
 Route::get('/weather', [App\Http\Controllers\User\WeatherController::class, 'index'])
     ->name('weather.index');
 Route::post('/weather/refresh', [App\Http\Controllers\User\WeatherController::class, 'refresh'])
@@ -71,6 +74,11 @@ Route::get('/risk-engine', [App\Http\Controllers\User\RiskEngineController::clas
 Route::get('/comparison', [App\Http\Controllers\User\ComparisonController::class, 'index'])
     ->name('comparison.index');
 
+Route::get('/shipment-estimation', [\App\Http\Controllers\User\ShipmentEstimationController::class, 'index'])
+    ->name('shipment-estimation.index');
+Route::post('/shipment-estimation/estimate', [\App\Http\Controllers\User\ShipmentEstimationController::class, 'estimate'])
+    ->name('shipment-estimation.estimate');
+
 Route::get('/favorites', [App\Http\Controllers\User\FavoriteController::class, 'index'])
     ->name('favorites.index');
 Route::post('/favorites/toggle', [App\Http\Controllers\User\FavoriteController::class, 'toggle'])
@@ -83,6 +91,13 @@ Route::post('/favorites/toggle', [App\Http\Controllers\User\FavoriteController::
             '/visualization',
             [VisualizationController::class, 'index']
         )->name('visualization.index');
+
+        Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])
+            ->name('profile.edit');
+        Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])
+            ->name('profile.update');
+        Route::put('/profile/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])
+            ->name('profile.password');
 
     });
     });
@@ -101,6 +116,17 @@ Route::middleware(['auth', 'role:admin'])
         Route::resource('/users', \App\Http\Controllers\Admin\UserController::class)
             ->names('users')
             ->only(['index', 'store', 'update', 'destroy']);
+
+        Route::resource('/ports', \App\Http\Controllers\Admin\AdminPortController::class)
+            ->names('ports');
+
+        Route::resource('/articles', \App\Http\Controllers\Admin\AdminArticleController::class)
+            ->names('articles');
+
+        Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])
+            ->name('profile.edit');
+        Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])
+            ->name('profile.update');
 
     });
 

@@ -10,13 +10,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Article extends Model
 {
     protected $fillable = [
-        'user_id',
+        'author_id',
         'country_id',
         'title',
         'slug',
-        'excerpt',
+        'summary',
         'content',
         'meta_description',
+        'thumbnail',
+        'category',
         'status',
         'published_at',
     ];
@@ -26,11 +28,11 @@ class Article extends Model
     ];
 
     /**
-     * Author
+     * Author / Creator
      */
-    public function user(): BelongsTo
+    public function author(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'author_id');
     }
 
     /**

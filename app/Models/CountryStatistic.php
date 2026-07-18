@@ -20,10 +20,10 @@ class CountryStatistic extends Model
 
     protected $casts = [
         'year' => 'integer',
-        'gdp' => 'decimal:2',
-        'inflation' => 'decimal:2',
-        'export_value' => 'decimal:2',
-        'import_value' => 'decimal:2',
+        'gdp' => 'float',
+        'inflation' => 'float',
+        'export_value' => 'float',
+        'import_value' => 'float',
         'population' => 'integer',
     ];
 

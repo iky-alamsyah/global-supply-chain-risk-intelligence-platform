@@ -41,7 +41,7 @@
 
         <a href="{{ route('ports.index') }}"
            class="sidebar-link {{ request()->routeIs('ports.*') ? 'active' : '' }}">
-            <i class="bi bi-anchor"></i>
+            <i class="bi bi-water"></i>
             <span>Port Dashboard</span>
         </a>
 
@@ -78,7 +78,19 @@
             <span>Comparison</span>
         </a>
 
+        <a href="{{ route('shipment-estimation.index') }}"
+           class="sidebar-link {{ request()->routeIs('shipment-estimation.*') ? 'active' : '' }}">
+            <i class="bi bi-compass"></i>
+            <span>Shipment Route Estimation</span>
+        </a>
+
         <div class="sidebar-sep"></div>
+
+        <a href="{{ route('profile.edit') }}"
+           class="sidebar-link {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
+            <i class="bi bi-person-circle"></i>
+            <span>Profile</span>
+        </a>
 
         <a href="{{ route('favorites.index') }}"
            class="sidebar-link {{ request()->routeIs('favorites.*') ? 'active' : '' }}">
@@ -91,9 +103,16 @@
     {{-- Footer --}}
     <div class="sidebar-footer">
         <div class="sidebar-footer-user">
-            <div class="sidebar-footer-avatar">
-                {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
-            </div>
+            @if(auth()->user()->photo)
+                <img src="{{ asset('storage/' . auth()->user()->photo) }}" 
+                     alt="{{ auth()->user()->name }}" 
+                     class="rounded-circle border"
+                     style="width: 32px; height: 32px; object-fit: cover; margin-right: 8px;">
+            @else
+                <div class="sidebar-footer-avatar">
+                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                </div>
+            @endif
             <div style="flex:1;min-width:0;">
                 <div class="sidebar-footer-name">{{ auth()->user()->name ?? 'User' }}</div>
                 <span class="sidebar-footer-role">Analyst</span>

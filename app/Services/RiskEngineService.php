@@ -85,48 +85,58 @@ class RiskEngineService
     /**
      * GDP Risk
      */
-    private function calculateGdpRisk(?float $gdp): float
+    private function calculateGdpRisk(mixed $gdp): float
     {
-        if ($gdp === null) {
-            return 50;
+        if ($gdp === null || $gdp === '' || $gdp === 'N/A' || $gdp === '-') {
+            return 50.0;
         }
 
-        if ($gdp >= 1000000000000) {
-            return 10;
+        $gdpFloat = (float) $gdp;
+        if ($gdpFloat <= 0.0) {
+            return 50.0;
         }
 
-        if ($gdp >= 100000000000) {
-            return 30;
+        if ($gdpFloat >= 1000000000000) {
+            return 10.0;
         }
 
-        if ($gdp >= 10000000000) {
-            return 60;
+        if ($gdpFloat >= 100000000000) {
+            return 30.0;
         }
 
-        return 90;
+        if ($gdpFloat >= 10000000000) {
+            return 60.0;
+        }
+
+        return 90.0;
     }
 
     /**
      * Inflation Risk
      */
-    private function calculateInflationRisk(?float $inflation): float
+    private function calculateInflationRisk(mixed $inflation): float
     {
-        if ($inflation === null) {
-            return 50;
+        if ($inflation === null || $inflation === '' || $inflation === 'N/A' || $inflation === '-') {
+            return 50.0;
         }
 
-        if ($inflation <= 2) {
-            return 10;
+        $inflationFloat = (float) $inflation;
+        if ($inflationFloat === 0.0 && $inflation !== 0 && $inflation !== '0' && $inflation !== 0.0) {
+            return 50.0;
         }
 
-        if ($inflation <= 5) {
-            return 30;
+        if ($inflationFloat <= 2) {
+            return 10.0;
         }
 
-        if ($inflation <= 10) {
-            return 60;
+        if ($inflationFloat <= 5) {
+            return 30.0;
         }
 
-        return 90;
+        if ($inflationFloat <= 10) {
+            return 60.0;
+        }
+
+        return 90.0;
     }
 }
