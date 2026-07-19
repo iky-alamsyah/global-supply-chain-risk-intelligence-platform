@@ -44,8 +44,8 @@
                             <div class="card-body p-2">
                                 <ul class="list-unstyled mb-0" style="font-size:.72rem;">
                                     @forelse($appreciation->where('change_percentage', '>', 0)->take(5) as $rate)
-                                        <li class="d-flex justify-content-between py-1.5 border-bottom border-secondary border-opacity-10">
-                                            <span style="color:var(--text);">{{ $rate->country->name }} ({{ $rate->target_currency }})</span>
+                                        <li class="d-flex justify-content-between align-items-center py-1.5 border-bottom border-secondary border-opacity-10">
+                                            <span class="d-flex align-items-center" style="color:var(--text);"><x-country-flag :country="$rate->country" size="sm" /><span>{{ $rate->country->name }} ({{ $rate->target_currency }})</span></span>
                                             <span class="text-success fw-bold">▲ +{{ number_format($rate->change_percentage, 4) }}%</span>
                                         </li>
                                     @empty
@@ -65,8 +65,8 @@
                             <div class="card-body p-2">
                                 <ul class="list-unstyled mb-0" style="font-size:.72rem;">
                                     @forelse($depreciation->where('change_percentage', '<', 0)->take(5) as $rate)
-                                        <li class="d-flex justify-content-between py-1.5 border-bottom border-secondary border-opacity-10">
-                                            <span style="color:var(--text);">{{ $rate->country->name }} ({{ $rate->target_currency }})</span>
+                                        <li class="d-flex justify-content-between align-items-center py-1.5 border-bottom border-secondary border-opacity-10">
+                                            <span class="d-flex align-items-center" style="color:var(--text);"><x-country-flag :country="$rate->country" size="sm" /><span>{{ $rate->country->name }} ({{ $rate->target_currency }})</span></span>
                                             <span class="text-danger fw-bold">▼ {{ number_format($rate->change_percentage, 4) }}%</span>
                                         </li>
                                     @empty
@@ -86,8 +86,8 @@
                             <div class="card-body p-2">
                                 <ul class="list-unstyled mb-0" style="font-size:.72rem;">
                                     @forelse($highestRisk->take(5) as $rate)
-                                        <li class="d-flex justify-content-between py-1.5 border-bottom border-secondary border-opacity-10">
-                                            <span style="color:var(--text);">{{ $rate->country->name }} ({{ $rate->target_currency }})</span>
+                                        <li class="d-flex justify-content-between align-items-center py-1.5 border-bottom border-secondary border-opacity-10">
+                                            <span class="d-flex align-items-center" style="color:var(--text);"><x-country-flag :country="$rate->country" size="sm" /><span>{{ $rate->country->name }} ({{ $rate->target_currency }})</span></span>
                                             <span class="fw-bold" style="color:#ef4444;">Score: {{ number_format($rate->currency_risk_score, 1) }}</span>
                                         </li>
                                     @empty
@@ -212,7 +212,7 @@
                         <tr>
                             <td style="vertical-align:middle;">
                                 <div class="d-flex align-items-center gap-2">
-                                    <div style="font-size:1.1rem;">🌍</div>
+                                    <x-country-flag :country="$country" size="sm" />
                                     <div>
                                         <a href="{{ route('countries.show', $country) }}" style="font-weight:700;color:var(--text);text-decoration:none;" class="hover-link">
                                             {{ $country->name }}

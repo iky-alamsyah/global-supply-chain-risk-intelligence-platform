@@ -112,7 +112,7 @@ body {
 .sidebar {
     width           : var(--sidebar-width);
     background      : var(--sidebar-bg);
-    min-height      : 100vh;
+    height          : 100vh;
     position        : fixed;
     top             : 0;
     left            : 0;

@@ -131,8 +131,9 @@
                                 </form>
                             </td>
                             <td>
-                                <div style="font-weight:700;font-size:.85rem;color:var(--text);">
-                                    {{ $country->name }}
+                                <div class="d-flex align-items-center" style="font-weight:700;font-size:.85rem;color:var(--text);">
+                                    <x-country-flag :country="$country" size="sm" />
+                                    <span>{{ $country->name }}</span>
                                 </div>
                                 @if($country->capital)
                                     <div style="font-size:.7rem;color:var(--text-muted);">

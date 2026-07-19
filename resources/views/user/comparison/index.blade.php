@@ -141,9 +141,12 @@
                                         @endphp
                                         <th class="text-center {{ $isHighest ? 'table-danger-highlight-header' : '' }}" 
                                             style="min-width: 150px; {{ $isHighest ? 'background:rgba(239,68,68,.05); border-bottom: 2px solid #ef4444;' : '' }}">
-                                            <div class="fw-bold" style="font-size: .88rem; color: var(--text);">
-                                                {{ $country->name }}
-                                            </div>
+                                             <div class="mb-1">
+                                                 <x-country-flag :country="$country" size="md" />
+                                             </div>
+                                             <div class="fw-bold" style="font-size: .88rem; color: var(--text);">
+                                                 {{ $country->name }}
+                                             </div>
                                             <div class="text-subtle font-monospace" style="font-size: .68rem;">
                                                 {{ $country->iso3 }}
                                             </div>
@@ -425,19 +428,25 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        autocompleteDropdown.innerHTML = items.map(c => `
-            <button type="button" class="list-group-item list-group-item-action border-0 px-3 py-2 text-start d-flex justify-content-between align-items-center dropdown-item-btn" 
-               style="background: transparent; color: var(--text); border-radius: 0;"
-               data-id="${c.id}">
-                <div>
-                    <div class="fw-bold" style="font-size:.78rem;">${c.flag || '🌍'} ${c.name}</div>
-                    <div style="font-size:.65rem; color: var(--text-subtle);">${c.region || ''}</div>
-                </div>
-                <span class="badge bg-danger bg-opacity-10 text-danger" style="font-size:.65rem; border:1px solid rgba(239,68,68,.2);">
-                    Risk: ${c.risk_score.toFixed(1)}
-                </span>
-            </button>
-        `).join('');
+        autocompleteDropdown.innerHTML = items.map(c => {
+            const flagUrl = c.iso2 ? `https://flagcdn.com/w320/${c.iso2.toLowerCase()}.png` : 'https://flagcdn.com/w320/un.png';
+            return `
+                <button type="button" class="list-group-item list-group-item-action border-0 px-3 py-2 text-start d-flex justify-content-between align-items-center dropdown-item-btn" 
+                   style="background: transparent; color: var(--text); border-radius: 0;"
+                   data-id="${c.id}">
+                    <div>
+                        <div class="fw-bold d-flex align-items-center" style="font-size:.78rem;">
+                            <img src="${flagUrl}" style="width: 20px; height: 13.3px; object-fit: cover; border-radius: 2px; margin-right: 6px; display: inline-block; vertical-align: middle;">
+                            <span>${c.name}</span>
+                        </div>
+                        <div style="font-size:.65rem; color: var(--text-subtle);">${c.region || ''}</div>
+                    </div>
+                    <span class="badge bg-danger bg-opacity-10 text-danger" style="font-size:.65rem; border:1px solid rgba(239,68,68,.2);">
+                        Risk: ${c.risk_score.toFixed(1)}
+                    </span>
+                </button>
+            `;
+        }).join('');
 
         // Add event listeners to list items
         const buttons = autocompleteDropdown.querySelectorAll('.dropdown-item-btn');
@@ -487,13 +496,16 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        selectedChips.innerHTML = selectedCountries.map(c => `
-            <span class="badge d-flex align-items-center gap-1" 
-                  style="background: var(--primary-50); color: var(--primary-light); font-size: .75rem; font-weight: 600; padding: .35rem .6rem; border-radius: var(--radius-sm);">
-                <span>${c.flag || '🌍'} ${c.name}</span>
-                <span class="btn-close btn-close-white ms-1" style="font-size:.5rem; cursor:pointer;" data-id="${c.id}"></span>
-            </span>
-        `).join('');
+        selectedChips.innerHTML = selectedCountries.map(c => {
+            const flagUrl = c.iso2 ? `https://flagcdn.com/w320/${c.iso2.toLowerCase()}.png` : 'https://flagcdn.com/w320/un.png';
+            return `
+                <span class="badge d-flex align-items-center gap-1" 
+                      style="background: var(--primary-50); color: var(--primary-light); font-size: .75rem; font-weight: 600; padding: .35rem .6rem; border-radius: var(--radius-sm);">
+                    <span class="d-flex align-items-center"><img src="${flagUrl}" style="width: 20px; height: 13.3px; object-fit: cover; border-radius: 2px; margin-right: 6px; display: inline-block; vertical-align: middle;">${c.name}</span>
+                    <span class="btn-close btn-close-white ms-1" style="font-size:.5rem; cursor:pointer;" data-id="${c.id}"></span>
+                </span>
+            `;
+        }).join('');
 
         // Add close event listeners
         selectedChips.querySelectorAll('.btn-close').forEach(btn => {

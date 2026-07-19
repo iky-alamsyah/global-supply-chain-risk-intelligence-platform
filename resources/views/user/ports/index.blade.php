@@ -63,7 +63,7 @@
                 <option value="">All Countries</option>
                 @foreach($countries as $country)
                     <option value="{{ $country->id }}" @selected(request('country') == $country->id)>
-                        {{ $country->name }}
+                        {{ $country->flag }} {{ $country->name }}
                     </option>
                 @endforeach
             </select>
@@ -124,8 +124,10 @@
                             </td>
                             <td>
                                 <a href="{{ route('countries.show', $port->country) }}"
+                                   class="d-inline-flex align-items-center gap-1.5"
                                    style="font-size:.78rem;font-weight:600;color:var(--primary-light);text-decoration:none;">
-                                    {{ $port->country->name }}
+                                    <x-country-flag :country="$port->country" size="sm" />
+                                    <span>{{ $port->country->name }}</span>
                                 </a>
                             </td>
                             <td style="font-size:.78rem;color:var(--text-secondary);">

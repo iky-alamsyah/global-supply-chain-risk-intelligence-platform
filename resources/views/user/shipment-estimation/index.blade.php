@@ -31,7 +31,7 @@
                         <select name="origin_country_id" id="originCountry" class="form-select select2-enable" required>
                             <option value="">Search Country...</option>
                             @foreach($countries as $c)
-                                <option value="{{ $c['id'] }}">{{ $c['flag'] }} {{ $c['name'] }}</option>
+                                <option value="{{ $c['id'] }}" data-iso2="{{ strtolower($c['iso2']) }}">{{ $c['name'] }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -41,7 +41,7 @@
                         <select name="dest_country_id" id="destCountry" class="form-select select2-enable" required>
                             <option value="">Search Country...</option>
                             @foreach($countries as $c)
-                                <option value="{{ $c['id'] }}">{{ $c['flag'] }} {{ $c['name'] }}</option>
+                                <option value="{{ $c['id'] }}" data-iso2="{{ strtolower($c['iso2']) }}">{{ $c['name'] }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -562,10 +562,27 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    function formatCountryState(state) {
+        if (!state.id) {
+            return state.text;
+        }
+        const iso2 = $(state.element).data('iso2');
+        if (!iso2) {
+            return state.text;
+        }
+        const flagUrl = `https://flagcdn.com/w320/${iso2}.png`;
+        const $state = $(
+            `<span class="d-flex align-items-center"><img src="${flagUrl}" style="width: 20px; height: 13.3px; object-fit: cover; border-radius: 2px; margin-right: 8px; display: inline-block; vertical-align: middle;"><span>${state.text}</span></span>`
+        );
+        return $state;
+    }
+
     // 1. Initialize searchable Select2 dropdowns
     $('.select2-enable').select2({
         theme: 'bootstrap-5',
-        width: '100%'
+        width: '100%',
+        templateResult: formatCountryState,
+        templateSelection: formatCountryState
     });
 
     // 2. Initialize Leaflet Map
@@ -739,8 +756,23 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         // Set Summary
-        document.getElementById("summaryOriginCountry").textContent = data.origin_port.country;
-        document.getElementById("summaryDestCountry").textContent = data.dest_port.country;
+        const originIso = $('#originCountry option:selected').data('iso2');
+        const destIso = $('#destCountry option:selected').data('iso2');
+        const originFlagUrl = originIso ? `https://flagcdn.com/w320/${originIso.toLowerCase()}.png` : 'https://flagcdn.com/w320/un.png';
+        const destFlagUrl = destIso ? `https://flagcdn.com/w320/${destIso.toLowerCase()}.png` : 'https://flagcdn.com/w320/un.png';
+
+        document.getElementById("summaryOriginCountry").innerHTML = `
+            <div class="d-flex align-items-center">
+                <img src="${originFlagUrl}" style="width: 24px; height: 16px; object-fit: cover; border-radius: 2px; margin-right: 6px;">
+                <span>${data.origin_port.country}</span>
+            </div>
+        `;
+        document.getElementById("summaryDestCountry").innerHTML = `
+            <div class="d-flex align-items-center">
+                <img src="${destFlagUrl}" style="width: 24px; height: 16px; object-fit: cover; border-radius: 2px; margin-right: 6px;">
+                <span>${data.dest_port.country}</span>
+            </div>
+        `;
         document.getElementById("summaryOriginPort").textContent = `${data.origin_port.name} (${data.origin_port.code})`;
         document.getElementById("summaryDestPort").textContent = `${data.dest_port.name} (${data.dest_port.code})`;
         document.getElementById("summaryCargo").textContent = data.cargo_type;

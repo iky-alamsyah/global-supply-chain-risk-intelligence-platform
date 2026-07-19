@@ -67,9 +67,7 @@
                 <a href="{{ route('countries.index') }}" class="hero-back-btn">
                     <i class="bi bi-arrow-left"></i>
                 </a>
-                <div class="country-flag-circle">
-                    🌍
-                </div>
+                <x-country-flag :country="$country" size="lg" />
                 <div>
                     <h1 class="hero-title mb-0">{{ $country->name }}</h1>
                     <p class="hero-sub mb-0">{{ $country->official_name }}</p>
@@ -194,7 +192,7 @@
     <div class="col-sm-6 col-xl-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#06b6d422,#06b6d408);border-color:#06b6d433;">
             <div class="stat-icon" style="background:#06b6d422;color:#06b6d4;">
-                <i class="bi bi-anchor"></i>
+                <i class="bi bi-water"></i>
             </div>
             <div class="stat-body">
                 <div class="stat-label">Total Ports</div>
@@ -264,7 +262,7 @@
     <div class="col-lg-5">
         <div class="panel-card h-100">
             <div class="panel-header">
-                <span class="panel-icon" style="background:#06b6d422;color:#06b6d4;"><i class="bi bi-anchor"></i></span>
+                <span class="panel-icon" style="background:#06b6d422;color:#06b6d4;"><i class="bi bi-water"></i></span>
                 <span class="panel-title">Port Statistics</span>
             </div>
             <div class="panel-body">

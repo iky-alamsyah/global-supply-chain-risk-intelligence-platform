@@ -145,7 +145,7 @@
                         <tr>
                             <td style="vertical-align:middle;">
                                 <div class="d-flex align-items-center gap-2">
-                                    <div style="font-size:1.1rem;">🌍</div>
+                                    <x-country-flag :country="$country" size="sm" />
                                     <div>
                                         <a href="{{ route('countries.show', $country) }}" style="font-weight:700;color:var(--text);text-decoration:none;" class="hover-link">
                                             {{ $country->name }}

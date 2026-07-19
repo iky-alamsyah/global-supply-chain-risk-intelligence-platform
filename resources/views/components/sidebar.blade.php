@@ -84,18 +84,18 @@
             <span>Shipment Route Estimation</span>
         </a>
 
+        <a href="{{ route('favorites.index') }}"
+           class="sidebar-link {{ request()->routeIs('favorites.*') ? 'active' : '' }}">
+            <i class="bi bi-star-fill"></i>
+            <span>Favorites</span>
+        </a>
+
         <div class="sidebar-sep"></div>
 
         <a href="{{ route('profile.edit') }}"
            class="sidebar-link {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
             <i class="bi bi-person-circle"></i>
             <span>Profile</span>
-        </a>
-
-        <a href="{{ route('favorites.index') }}"
-           class="sidebar-link {{ request()->routeIs('favorites.*') ? 'active' : '' }}">
-            <i class="bi bi-star"></i>
-            <span>Favorites</span>
         </a>
 
     </nav>

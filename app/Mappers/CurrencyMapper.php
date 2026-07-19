@@ -68,8 +68,22 @@ class CurrencyMapper
         $weights = [];
 
         // 1. Volatility Score (50%)
-        // Absolute change percentage scaled. E.g. 5% change is maximum risk (100)
-        $components['volatility'] = min(100.0, abs($changePercentage) * 20.0);
+        // Base currency risk mapping: reserve currencies get low base risk, exotic/unstable ones get higher base risk
+        $stableCurrencies = ['USD', 'EUR', 'JPY', 'GBP', 'CHF', 'CAD', 'AUD', 'SGD', 'NZD'];
+        $volatileCurrencies = ['ARS', 'TRY', 'VEF', 'ZWL', 'LBP', 'IRR', 'RUB', 'UAH', 'PKR', 'EGP', 'NGN'];
+        
+        $currencyCode = $country->currency_code;
+        if (in_array($currencyCode, $stableCurrencies)) {
+            $baseRisk = 15.0;
+        } elseif (in_array($currencyCode, $volatileCurrencies)) {
+            $baseRisk = 80.0;
+        } else {
+            $baseRisk = 45.0; // Standard developing economy currency baseline
+        }
+
+        // Incorporate absolute change percentage as volatility factor
+        $volatilityScore = min(100.0, abs($changePercentage) * 20.0);
+        $components['volatility'] = min(100.0, max(5.0, $baseRisk + $volatilityScore));
         $weights['volatility'] = 0.50;
 
         // 2. Inflation Score (20%)
@@ -79,6 +93,19 @@ class CurrencyMapper
             // Scale: inflation <= 2% is 0 risk, >= 15% is 100 risk
             $components['inflation'] = min(100.0, max(0.0, ($inflation - 2.0) * (100 / 13.0)));
             $weights['inflation'] = 0.20;
+        } else {
+            // Geographic fallback for inflation when statistics are not available
+            $subregion = $country->subregion;
+            $lowRiskSubregions = ['Western Europe', 'Northern Europe', 'Southern Europe', 'Northern America', 'Eastern Asia', 'Australia and New Zealand'];
+            $highRiskSubregions = ['South America', 'Central America', 'Caribbean', 'Western Asia', 'Eastern Europe', 'Northern Africa', 'Middle Africa', 'Eastern Africa', 'Western Africa', 'Southern Africa'];
+            if ($subregion && in_array($subregion, $lowRiskSubregions)) {
+                $components['inflation'] = 20.0;
+            } elseif ($subregion && in_array($subregion, $highRiskSubregions)) {
+                $components['inflation'] = 65.0;
+            } else {
+                $components['inflation'] = 45.0;
+            }
+            $weights['inflation'] = 0.20;
         }
 
         // 3. News Sentiment Score (20%)
@@ -87,6 +114,10 @@ class CurrencyMapper
             $negativeNews = $country->newsCaches()->where('sentiment', 'negative')->count();
             $components['sentiment'] = ($negativeNews / $newsCount) * 100.0;
             $weights['sentiment'] = 0.20;
+        } else {
+            // Baseline news sentiment fallback
+            $components['sentiment'] = 45.0;
+            $weights['sentiment'] = 0.20;
         }
 
         // 4. Country Risk Score (10%)
@@ -94,12 +125,15 @@ class CurrencyMapper
         if ($countryRisk && $countryRisk->risk_score !== null) {
             $components['country'] = (float) $countryRisk->risk_score;
             $weights['country'] = 0.10;
+        } else {
+            $components['country'] = 45.0;
+            $weights['country'] = 0.10;
         }
 
         // Proportional distribution of weights if any component is missing
         $totalWeight = array_sum($weights);
         if ($totalWeight === 0.0) {
-            return 0.0;
+            return 45.0;
         }
 
         $weightedSum = 0.0;

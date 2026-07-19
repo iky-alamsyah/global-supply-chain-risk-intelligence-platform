@@ -49,7 +49,7 @@
                 <option value="">All Countries</option>
                 @foreach($countries as $country)
                     <option value="{{ $country->id }}" @selected(request('country') == $country->id)>
-                        {{ $country->name }}
+                        {{ $country->flag }} {{ $country->name }}
                     </option>
                 @endforeach
             </select>
@@ -106,9 +106,12 @@
                                 {{ $news->firstItem() + $i }}
                             </td>
                             <td style="white-space:nowrap;">
-                                <span class="badge" style="background:var(--primary-50);color:var(--primary-light);font-size:.68rem;font-weight:700;border-radius:6px;padding:.25rem .5rem;">
-                                    {{ $item->country->name }}
-                                </span>
+                                <div class="d-flex align-items-center gap-1.5">
+                                    <x-country-flag :country="$item->country" size="sm" />
+                                    <span class="badge" style="background:var(--primary-50);color:var(--primary-light);font-size:.68rem;font-weight:700;border-radius:6px;padding:.25rem .5rem;">
+                                        {{ $item->country->name }}
+                                    </span>
+                                </div>
                             </td>
                             <td>
                                 <div style="font-weight:600;font-size:.82rem;color:var(--text);line-height:1.35;">

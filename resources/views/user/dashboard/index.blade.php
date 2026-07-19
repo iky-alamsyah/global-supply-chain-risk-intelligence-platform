@@ -172,9 +172,12 @@ window.riskByRegion     = @json($riskByRegion);
                                         </span>
                                     </td>
                                     <td>
-                                        <span style="font-weight:600;color:var(--text);">
-                                            {{ $risk->country->name }}
-                                        </span>
+                                        <div class="d-flex align-items-center">
+                                            <x-country-flag :country="$risk->country" size="sm" />
+                                            <span style="font-weight:600;color:var(--text);">
+                                                {{ $risk->country->name }}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td>
                                         <span style="font-weight:700;font-family:monospace;font-size:.85rem;">
@@ -239,10 +242,13 @@ window.riskByRegion     = @json($riskByRegion);
                         <tbody>
                             @forelse($latestNews as $news)
                                 <tr>
-                                    <td style="white-space:nowrap;">
-                                        <span class="badge" style="background:var(--primary-50);color:var(--primary-light);font-size:.68rem;font-weight:600;">
-                                            {{ $news->country->name }}
-                                        </span>
+                                    <td style="white-space:nowrap; vertical-align: middle;">
+                                        <div class="d-flex align-items-center gap-1.5">
+                                            <x-country-flag :country="$news->country" size="sm" />
+                                            <span class="badge" style="background:var(--primary-50);color:var(--primary-light);font-size:.68rem;font-weight:600;">
+                                                {{ $news->country->name }}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td>
                                         <a href="{{ $news->url }}" target="_blank"
@@ -302,7 +308,10 @@ window.riskByRegion     = @json($riskByRegion);
                             @forelse($weatherAlerts as $alert)
                                 <tr>
                                     <td style="font-weight:600;font-size:.82rem;vertical-align:middle;">
-                                        {{ $alert->country->name }}
+                                        <div class="d-flex align-items-center">
+                                            <x-country-flag :country="$alert->country" size="sm" />
+                                            <span>{{ $alert->country->name }}</span>
+                                        </div>
                                     </td>
                                     <td style="font-size:.78rem;color:var(--text-muted);vertical-align:middle;" title="{{ $alert->description }}">
                                         <div style="font-weight:600;color:var(--text);">{{ $alert->title }}</div>
@@ -365,7 +374,12 @@ window.riskByRegion     = @json($riskByRegion);
                         <tbody>
                             @forelse($latestRates as $rate)
                                 <tr>
-                                    <td style="font-weight:600;font-size:.82rem;">{{ $rate->country->name }}</td>
+                                    <td style="font-weight:600;font-size:.82rem;vertical-align:middle;">
+                                        <div class="d-flex align-items-center">
+                                            <x-country-flag :country="$rate->country" size="sm" />
+                                            <span>{{ $rate->country->name }}</span>
+                                        </div>
+                                    </td>
                                     <td>
                                         <span class="badge" style="background:var(--primary-50);color:var(--primary-light);font-size:.68rem;font-weight:700;">
                                             {{ $rate->country->currency_code ?? '—' }}

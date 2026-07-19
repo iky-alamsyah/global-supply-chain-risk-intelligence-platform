@@ -100,8 +100,9 @@
                                 {{ $favorites->firstItem() + $i }}
                             </td>
                             <td>
-                                <div style="font-weight:700;font-size:.85rem;color:var(--text);">
-                                    {{ $country->flag ?? '🌍' }} {{ $country->name }}
+                                <div class="d-flex align-items-center" style="font-weight:700;font-size:.85rem;color:var(--text);">
+                                    <x-country-flag :country="$country" size="sm" />
+                                    <span>{{ $country->name }}</span>
                                 </div>
                                 <div style="font-size:.7rem;color:var(--text-muted);">
                                     {{ $country->official_name }}
