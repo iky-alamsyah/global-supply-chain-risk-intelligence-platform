@@ -14,7 +14,7 @@ class ImportPorts extends Command
 
     public function handle()
     {
-        $path = storage_path('app/imports/world_port_index.csv');
+        $path = database_path('data/world_port_index.csv');
 
         if (! file_exists($path)) {
 
