@@ -20,33 +20,209 @@ class WeatherImportService
     ) {
     }
 
-    /**
-     * Import weather data for all active countries.
-     */
-    public function import(): array
+    public function import(?\Closure $logCallback = null): array
     {
         $success = 0;
         $failed = 0;
+        $skipped = 0;
+        $details = [];
 
         $countries = $this->countryRepository->activeCountries();
+        
+        if ($countries->isEmpty()) {
+            if ($logCallback) {
+                $logCallback('info', 'No active countries found for weather import.');
+            }
+            return ['success' => 0, 'failed' => 0, 'skipped' => 0, 'details' => []];
+        }
+
+        $validCountries = [];
+        $coordsList = [];
+
+        if ($logCallback) {
+            $logCallback('info', 'Resolving coordinates for active countries...');
+        }
 
         foreach ($countries as $country) {
-            try {
-                $this->importForCountry($country);
+            // Check if latest cache is still valid and not forced
+            $latestCache = $country->weatherCaches()->orderByDesc('created_at')->first();
+            if ($latestCache && $latestCache->expires_at && \Carbon\Carbon::parse($latestCache->expires_at)->isFuture()) {
                 $success++;
+                $details[$country->name] = 'Skipped: Cache is still valid';
+                if ($logCallback) {
+                    $logCallback('info', "Country [{$country->name}]: Weather cache is still valid, skipping API call.");
+                }
+                continue;
+            }
+
+            $coordinates = $this->getCountryCoordinates($country);
+            if (!$coordinates) {
+                try {
+                    $this->useLastCacheOrThrow($country, 'No coordinates available');
+                    $success++;
+                    $details[$country->name] = 'Success: Fell back to last cache (No coordinates)';
+                    if ($logCallback) {
+                        $logCallback('warn', "Country [{$country->name}]: No coordinates found, fell back to last cache.");
+                    }
+                } catch (\Throwable $e) {
+                    $skipped++;
+                    $details[$country->name] = 'Skipped: No coordinates and no cache available';
+                    if ($logCallback) {
+                        $logCallback('warn', "Country [{$country->name}]: Skipped - No coordinates and no cache available.");
+                    }
+                }
+                continue;
+            }
+
+            $validCountries[] = $country;
+            $coordsList[] = $coordinates;
+        }
+
+        if (empty($validCountries)) {
+            if ($logCallback) {
+                $logCallback('info', 'No countries require API weather updates.');
+            }
+            return ['success' => $success, 'failed' => $failed, 'skipped' => $skipped, 'details' => $details];
+        }
+
+        // Chunk valid countries into groups of 50 for batch requests (avoids URL length limits)
+        $chunks = array_chunk($validCountries, 50);
+        $weatherDataList = [];
+
+        foreach ($chunks as $chunkIndex => $chunk) {
+            $latitudes = [];
+            $longitudes = [];
+            foreach ($chunk as $country) {
+                $coordinates = $this->getCountryCoordinates($country);
+                $latitudes[] = $coordinates['lat'];
+                $longitudes[] = $coordinates['lng'];
+            }
+
+            if ($logCallback) {
+                $logCallback('info', "Sending batch request to Open-Meteo API for chunk " . ($chunkIndex + 1) . " of " . count($chunks) . " (" . count($chunk) . " countries)...");
+            }
+
+            $response = null;
+            $rateLimited = false;
+            $maxRetries = 3;
+            $delay = 1;
+
+            for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+                try {
+                    $response = \Illuminate\Support\Facades\Http::acceptJson()
+                        ->timeout(15)
+                        ->get(config('services.open_meteo.base_url') . '/forecast', [
+                            'latitude' => implode(',', $latitudes),
+                            'longitude' => implode(',', $longitudes),
+                            'current' => implode(',', [
+                                'temperature_2m',
+                                'rain',
+                                'wind_speed_10m',
+                                'weather_code',
+                                'relative_humidity_2m',
+                                'surface_pressure',
+                                'cloud_cover',
+                            ]),
+                            'timezone' => 'auto',
+                        ]);
+
+                    if ($response->status() === 429) {
+                        $rateLimited = true;
+                        if ($logCallback) {
+                            $logCallback('warn', "Open-Meteo Rate Limit Exceeded (HTTP 429) on chunk " . ($chunkIndex + 1) . " attempt {$attempt}. Retrying in {$delay}s...");
+                        }
+                    } else if ($response->successful()) {
+                        $rateLimited = false;
+                        break;
+                    } else {
+                        throw new \Exception("HTTP Error " . $response->status());
+                    }
+                } catch (\Throwable $e) {
+                    if ($logCallback) {
+                        $logCallback('warn', "API connection chunk " . ($chunkIndex + 1) . " attempt {$attempt} failed: " . $e->getMessage());
+                    }
+                }
+
+                if ($attempt < $maxRetries) {
+                    sleep($delay);
+                    $delay *= 2;
+                }
+            }
+
+            if ($response && $response->successful() && !$rateLimited) {
+                $weatherJson = $response->json();
+                $chunkResults = isset($weatherJson[0]) ? $weatherJson : [$weatherJson];
+                foreach ($chunkResults as $res) {
+                    $weatherDataList[] = $res;
+                }
+            } else {
+                if ($logCallback) {
+                    $logCallback('error', "Chunk " . ($chunkIndex + 1) . " API request failed. Falling back all " . count($chunk) . " countries to cache.");
+                }
+                foreach ($chunk as $country) {
+                    $weatherDataList[] = null;
+                }
+            }
+
+            if ($chunkIndex < count($chunks) - 1) {
+                sleep(1); // Polite pause between API calls
+            }
+        }
+
+        foreach ($validCountries as $index => $country) {
+            $weatherData = $weatherDataList[$index] ?? null;
+
+            if (!$weatherData || empty($weatherData['current'])) {
+                try {
+                    $this->useLastCacheOrThrow($country, 'API response missing data');
+                    $success++;
+                    $details[$country->name] = 'Success: Fell back to last cache (API response incomplete)';
+                    if ($logCallback) {
+                        $logCallback('warn', "Country [{$country->name}]: API response incomplete, fell back to last cache.");
+                    }
+                } catch (\Throwable $e) {
+                    $failed++;
+                    $details[$country->name] = 'Failed: ' . $e->getMessage();
+                    if ($logCallback) {
+                        $logCallback('error', "Country [{$country->name}]: API response incomplete and no cache available.");
+                    }
+                }
+                continue;
+            }
+
+            try {
+                $alerts = $this->generateWeatherAlerts($country, $weatherData['current']);
+                $dto = WeatherMapper::fromApi($country, $weatherData, $alerts);
+                $this->weatherRepository->updateOrCreate($dto);
+
+                $success++;
+                $details[$country->name] = 'Success: Weather updated from API';
+                if ($logCallback) {
+                    $logCallback('info', "Country [{$country->name}]: Weather updated successfully (Temp: {$weatherData['current']['temperature_2m']}°C).");
+                }
             } catch (\Throwable $e) {
-                Log::error('Weather Import Failed for Country', [
-                    'country' => $country->name,
-                    'iso3' => $country->iso3,
-                    'message' => $e->getMessage(),
-                ]);
-                $failed++;
+                try {
+                    $this->useLastCacheOrThrow($country, $e->getMessage());
+                    $success++;
+                    $details[$country->name] = 'Success: Fell back to last cache (Save failed: ' . $e->getMessage() . ')';
+                    if ($logCallback) {
+                        $logCallback('warn', "Country [{$country->name}]: DB save failed, fell back to last cache. Error: " . $e->getMessage());
+                    }
+                } catch (\Throwable $cacheEx) {
+                    $failed++;
+                    $details[$country->name] = 'Failed: ' . $e->getMessage();
+                    if ($logCallback) {
+                        $logCallback('error', "Country [{$country->name}]: DB save failed and no cache available. Error: " . $e->getMessage());
+                    }
+                }
             }
         }
 
         return [
             'success' => $success,
             'failed' => $failed,
+            'skipped' => $skipped,
+            'details' => $details,
         ];
     }
 

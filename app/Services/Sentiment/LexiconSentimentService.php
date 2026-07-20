@@ -15,27 +15,41 @@ class LexiconSentimentService
 
     public function __construct()
     {
-        $this->loadLexicons();
+        // Constructor is kept free of database queries to avoid boot/test database errors
     }
 
     /**
-     * Load lexicons from Database and cache them.
+     * Ensure lexicons are loaded, with complete exception protection.
+     * If database or cache is not yet available (e.g. during application boot or compilation),
+     * it falls back to empty arrays rather than failing.
      */
-    protected function loadLexicons(): void
+    protected function ensureLexiconsLoaded(): void
     {
-        $this->positiveWords = Cache::remember('sentiment_positive_words', 3600, function () {
-            return PositiveWord::pluck('word')
-                ->map(fn($w) => strtolower(trim($w)))
-                ->filter()
-                ->toArray();
-        });
+        if (!empty($this->positiveWords) || !empty($this->negativeWords)) {
+            return;
+        }
 
-        $this->negativeWords = Cache::remember('sentiment_negative_words', 3600, function () {
-            return NegativeWord::pluck('word')
-                ->map(fn($w) => strtolower(trim($w)))
-                ->filter()
-                ->toArray();
-        });
+        try {
+            $this->positiveWords = Cache::remember('sentiment_positive_words', 3600, function () {
+                return PositiveWord::pluck('word')
+                    ->map(fn($w) => strtolower(trim($w)))
+                    ->filter()
+                    ->toArray();
+            });
+        } catch (\Throwable $e) {
+            $this->positiveWords = [];
+        }
+
+        try {
+            $this->negativeWords = Cache::remember('sentiment_negative_words', 3600, function () {
+                return NegativeWord::pluck('word')
+                    ->map(fn($w) => strtolower(trim($w)))
+                    ->filter()
+                    ->toArray();
+            });
+        } catch (\Throwable $e) {
+            $this->negativeWords = [];
+        }
     }
 
     /**
@@ -43,6 +57,8 @@ class LexiconSentimentService
      */
     public function analyze(string $title, ?string $description = null): array
     {
+        $this->ensureLexiconsLoaded();
+
         $text = strtolower($title . ' ' . ($description ?? ''));
 
         // Remove punctuation for clean matching

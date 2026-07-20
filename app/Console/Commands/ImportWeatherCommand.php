@@ -20,21 +20,37 @@ class ImportWeatherCommand extends Command
     }
 
     public function handle(): int
-{
-    $this->newLine();
+    {
+        $this->newLine();
 
-    $this->info('========================================');
-    $this->info(' Open Meteo Weather Import');
-    $this->info('========================================');
+        $this->info('========================================');
+        $this->info(' Open Meteo Weather Import');
+        $this->info('========================================');
 
-    $result = $this->weatherImportService->import();
+        $result = $this->weatherImportService->import(function (string $level, string $message) {
+            if ($level === 'error') {
+                $this->error($message);
+            } elseif ($level === 'warn') {
+                $this->warn($message);
+            } else {
+                $this->line($message);
+            }
+        });
 
-    $this->newLine();
+        $this->newLine();
 
-    $this->info("Success : {$result['success']}");
+        $success = $result['success'] ?? 0;
+        $failed = $result['failed'] ?? 0;
+        $skipped = $result['skipped'] ?? 0;
+        $total = $success + $failed + $skipped;
 
-    $this->warn("Failed  : {$result['failed']}");
+        $this->info("========================================");
+        $this->line("Total Countries : {$total}");
+        $this->info("Imported        : {$success}");
+        $this->comment("Skipped         : {$skipped}");
+        $this->warn("Failed          : {$failed}");
+        $this->info("========================================");
 
-    return self::SUCCESS;
-}
+        return self::SUCCESS;
+    }
 }

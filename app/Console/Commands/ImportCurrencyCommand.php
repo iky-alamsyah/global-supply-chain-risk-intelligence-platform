@@ -27,12 +27,29 @@ class ImportCurrencyCommand extends Command
         $this->info(' Exchange Rate Import');
         $this->info('======================================');
 
-        $result = $this->currencyImportService->import();
+        $result = $this->currencyImportService->import(function (string $level, string $message) {
+            if ($level === 'error') {
+                $this->error($message);
+            } elseif ($level === 'warn') {
+                $this->warn($message);
+            } else {
+                $this->line($message);
+            }
+        });
 
         $this->newLine();
 
-        $this->info("Success : {$result['success']}");
-        $this->warn("Failed  : {$result['failed']}");
+        $success = $result['success'] ?? 0;
+        $failed = $result['failed'] ?? 0;
+        $skipped = $result['skipped'] ?? 0;
+        $total = $success + $failed + $skipped;
+
+        $this->info("======================================");
+        $this->line("Total Countries : {$total}");
+        $this->info("Imported        : {$success}");
+        $this->comment("Skipped         : {$skipped}");
+        $this->warn("Failed          : {$failed}");
+        $this->info("======================================");
 
         return self::SUCCESS;
     }

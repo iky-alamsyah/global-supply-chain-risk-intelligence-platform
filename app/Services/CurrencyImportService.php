@@ -20,13 +20,16 @@ class CurrencyImportService
     ) {
     }
 
-    /**
-     * Import exchange rates for all countries.
-     */
-    public function import(): array
+    public function import(?\Closure $logCallback = null): array
     {
         $success = 0;
         $failed = 0;
+        $skipped = 0;
+        $details = [];
+
+        if ($logCallback) {
+            $logCallback('info', 'Connecting to Exchange Rate API...');
+        }
 
         try {
             $response = $this->exchangeRateService->latest();
@@ -34,39 +37,92 @@ class CurrencyImportService
                 throw new \Exception('Exchange rate API response does not contain rates.');
             }
 
+            $baseCode = $response['base_code'] ?? 'USD';
+            if ($logCallback) {
+                $logCallback('info', "HTTP 200 - Exchange rates retrieved successfully (Base: {$baseCode}).");
+            }
+
             $countries = $this->countryRepository->activeCountries();
 
             foreach ($countries as $country) {
+                $currency = $country->currency_code;
+                if (empty($currency)) {
+                    $skipped++;
+                    $details[$country->name] = 'Skipped: Currency code not configured';
+                    if ($logCallback) {
+                        $logCallback('warn', "Country [{$country->name}]: Skipped - Currency code is empty.");
+                    }
+                    continue;
+                }
+
+                if (!isset($response['rates'][$currency])) {
+                    try {
+                        $this->useLastCacheOrThrow($country, "Currency {$currency} not supported by API");
+                        $success++;
+                        $details[$country->name] = "Success: Fell back to last cache (Currency {$currency} not supported by API)";
+                        if ($logCallback) {
+                            $logCallback('warn', "Country [{$country->name}]: Currency {$currency} not supported by API, fell back to last cache.");
+                        }
+                    } catch (\Throwable $cacheEx) {
+                        $skipped++;
+                        $details[$country->name] = "Skipped: Currency {$currency} not supported by API and no cache available";
+                        if ($logCallback) {
+                            $logCallback('warn', "Country [{$country->name}]: Skipped - Currency {$currency} not supported by API and no cache available.");
+                        }
+                    }
+                    continue;
+                }
+
                 try {
                     $dto = CurrencyMapper::fromApi($country, $response);
                     if (!$dto) {
-                        throw new \Exception('Exchange rate not available in response for currency: ' . $country->currency_code);
+                        throw new \Exception("Exchange rate not available in response for currency: {$currency}");
                     }
 
                     $this->currencyRepository->updateOrCreate($dto);
                     $success++;
+                    $details[$country->name] = "Success: Updated from API (Rate: {$dto->exchangeRate})";
+                    if ($logCallback) {
+                        $logCallback('info', "Country [{$country->name}]: Exchange rate updated successfully ({$baseCode} to {$currency}: {$dto->exchangeRate}).");
+                    }
                 } catch (\Throwable $e) {
-                    Log::warning('Currency Import failed for country, attempting fallback to cache', [
-                        'country' => $country->name,
-                        'error' => $e->getMessage()
-                    ]);
-
-                    $this->useLastCacheOrThrow($country, $e->getMessage());
-                    $failed++;
+                    try {
+                        $this->useLastCacheOrThrow($country, $e->getMessage());
+                        $success++;
+                        $details[$country->name] = 'Success: Fell back to last cache (' . $e->getMessage() . ')';
+                        if ($logCallback) {
+                            $logCallback('warn', "Country [{$country->name}]: API mapping failed, fell back to last cache. Error: " . $e->getMessage());
+                        }
+                    } catch (\Throwable $cacheEx) {
+                        $failed++;
+                        $details[$country->name] = 'Failed: ' . $e->getMessage();
+                        if ($logCallback) {
+                            $logCallback('error', "Country [{$country->name}]: Import failed and no cache available. Error: " . $e->getMessage());
+                        }
+                    }
                 }
             }
         } catch (\Throwable $e) {
-            Log::error('Global Exchange Rate Import failed completely', [
-                'error' => $e->getMessage()
-            ]);
+            if ($logCallback) {
+                $logCallback('error', "CRITICAL: Global Exchange Rate Import failed completely: " . $e->getMessage() . ". Attempting cache fallback for all countries...");
+            }
 
             // Attempt cache fallback for all active countries
             $countries = $this->countryRepository->activeCountries();
             foreach ($countries as $country) {
                 try {
                     $this->useLastCacheOrThrow($country, 'Global API request failed: ' . $e->getMessage());
+                    $success++;
+                    $details[$country->name] = 'Success: Fell back to last cache (Global API failure)';
+                    if ($logCallback) {
+                        $logCallback('warn', "Country [{$country->name}]: Fell back to last cache due to global API failure.");
+                    }
                 } catch (\Throwable $ex) {
                     $failed++;
+                    $details[$country->name] = 'Failed: ' . $ex->getMessage();
+                    if ($logCallback) {
+                        $logCallback('error', "Country [{$country->name}]: Cache fallback failed: " . $ex->getMessage());
+                    }
                 }
             }
         }
@@ -74,6 +130,8 @@ class CurrencyImportService
         return [
             'success' => $success,
             'failed' => $failed,
+            'skipped' => $skipped,
+            'details' => $details,
         ];
     }
 

@@ -29,48 +29,14 @@ class CountryRepository
     }
 
     /**
- * Get all active countries.
- */
-public function activeCountries()
-{
-    $countries = [
-
-        'Indonesia',
-
-        'Singapore',
-
-        'Malaysia',
-
-        'Thailand',
-
-        'Vietnam',
-
-        'China',
-
-        'Japan',
-
-        'South Korea',
-
-        'India',
-
-        'United States',
-
-        'Germany',
-
-        'Netherlands',
-
-        'Australia',
-
-        'United Kingdom',
-
-        'United Arab Emirates',
-
-    ];
-
-    return Country::whereIn('name', $countries)
-        ->orderBy('name')
-        ->get();
-}
+     * Get all active countries.
+     */
+    public function activeCountries()
+    {
+        return Country::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+    }
     /**
      * Find by ISO2.
      */
