@@ -16,6 +16,12 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             AdminUserSeeder::class,
+
+            CountrySeeder::class,
+            PortSeeder::class,
+
+            PositiveWordSeeder::class,
+            NegativeWordSeeder::class,
         ]);
     }
 }
