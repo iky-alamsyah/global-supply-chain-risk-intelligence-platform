@@ -15,16 +15,15 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = User::firstOrCreate(
-            [
-                'email' => 'admin@example.com',
-            ],
-            [
-                'name' => 'Administrator',
-                'password' => Hash::make('password'),
-            ]
-        );
-
-        $admin->assignRole('admin');
+        User::updateOrCreate(
+    [
+        'email' => 'admin@example.com',
+    ],
+    [
+        'name' => 'Administrator',
+        'password' => Hash::make('password'),
+        'role' => 'admin',
+    ]
+);
     }
 }
